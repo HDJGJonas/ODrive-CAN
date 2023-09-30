@@ -104,9 +104,11 @@ typedef struct {
 
 typedef struct {
     uint32_t AxisError;
-    uint8_t AxisState;
-    uint8_t ProcedureResult;
-    bool TrajectoryDone;
+    uint8_t AxisCurrentState;
+    bool MotorErrorFlag;
+    bool EncoderErrorFlag;
+    bool ControllerErrorFlag;
+    bool TrajectoryDoneFlag;
 } HeartbeatRequest;
 
 typedef struct {

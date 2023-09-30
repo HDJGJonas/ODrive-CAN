@@ -68,9 +68,11 @@ HeartbeatRequest ODrive::ODrive::GetHeartbeat(uint16_t Node)   {
     Read(&Request);
     HeartbeatRequest Response = {
         .AxisError = ReadU32(Request.data, 0),
-        .AxisState = Request.data[4],
-        .ProcedureResult = Request.data[5],
-        .TrajectoryDone = Request.data[6],
+        .AxisCurrentState = Request.data[4],
+        .MotorErrorFlag = Request.data[5],
+        .EncoderErrorFlag = Request.data[6],
+        .ControllerErrorFlag = Request.data[7] & 0xFE,
+        .TrajectoryDoneFlag = Request.data[7] & 0x1,
     };
     return Response;
 }
