@@ -115,7 +115,7 @@ typedef enum {
 
 typedef enum {
     GetHearbeat            = 0x001,
-    Estop                  = 0x002,
+    Endstop                = 0x002,
     GetMotorError          = 0x003,
     GetEncoderError        = 0x004,
     GetSensorlessError     = 0x005,
@@ -123,7 +123,7 @@ typedef enum {
     SetAxisRequestedState  = 0x007,
     GetEncoderEstimate     = 0x009,
     GetEncoderCount        = 0x00A,
-    SetControllerModes     = 0x00B,
+    SetControllerMode      = 0x00B,
     SetInputPos            = 0x00C,
     SetInputVel            = 0x00D,
     SetInputTorque         = 0x00E,
