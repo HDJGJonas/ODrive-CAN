@@ -8,7 +8,7 @@ typedef enum {
     MOTOR_FAILED                    = 0x40,
     SENSORLESS_ESTIMATOR_FAILED     = 0x80,
     ENCODER_FAILED                  = 0x100,
-    CONTROLLER_FAILED               = 0x200,
+    CONTROLLER_FAILED_AXIS          = 0x200,
     WATCHDOG_TIMER_EXPIRED          = 0x800,
     MIN_ENDSTOP_PRESSED             = 0x1000,
     MAX_ENDSTOP_PRESSED             = 0x2000,
@@ -48,7 +48,7 @@ typedef enum {
     FET_THERMISTOR_OVER_TEMP            = 0x40000,
     TIMER_UPDATE_MISSED                 = 0x80000,
     CURRENT_MEASUREMENT_UNAVAILABLE     = 0x100000,
-    CONTROLLER_FAILED                   = 0x200000,
+    CONTROLLER_FAILED_MOTOR             = 0x200000,
     I_BUS_OUT_OF_RANGE                  = 0x400000,
     BRAKE_RESISTOR_DISARMED             = 0x800000,
     SYSTEM_LEVEL                        = 0x1000000,
@@ -66,7 +66,7 @@ typedef enum {
 } MotorError;
 
 typedef enum {
-    UNSTABLE_GAIN               = 0x1,
+    UNSTABLE_GAIN_ENCODER       = 0x1,
     CPR_POLEPAIRS_MISMATCH      = 0x2,
     NO_RESPONSE                 = 0x4,
     UNSUPPORTED_ENCODER_MODE    = 0x8,
@@ -79,14 +79,14 @@ typedef enum {
 } EncoderError;
 
 typedef enum {
-    UNSTABLE_GAIN                   = 0x1,
-    UNKNOWN_CURRENT_MEASUREMENT     = 0x2,
+    UNSTABLE_GAIN_SENSORLESS                = 0x1,
+    UNKNOWN_CURRENT_MEASUREMENT_SENSORLESS  = 0x2,
 } SensorlessError;
 
 typedef enum {
     OVERSPEED               = 0x1,
     INVALID_INPUT_MODE      = 0x2,
-    UNSTABLE_GAIN           = 0x4,
+    UNSTABLE_GAIN_CONTROLLER= 0x4,
     INVALID_MIRROR_AXIS     = 0x8,
     INVALID_LOAD_ENCODER    = 0x10,
     INVALID_ESTIMATE        = 0x20,

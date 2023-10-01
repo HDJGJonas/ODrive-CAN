@@ -25,8 +25,8 @@ uint32_t ReadU32(uint8_t *Buffer, uint32_t Offset) {
     return Buffer[Offset] | (Buffer[Offset + 1] << 0x8) | (Buffer[Offset + 2] << 0x10) | (Buffer[Offset + 3] << 0x18);
 }
 
-uint32_t ReadU64(uint8_t *Buffer, uint32_t Offset) {
-    return Buffer[Offset] | (Buffer[Offset + 1] << 0x8) | (Buffer[Offset + 2] << 0x10) | (Buffer[Offset + 3] << 0x18) | (Buffer[Offset + 4] << 0x20) | (Buffer[Offset + 5] << 0x28) | (Buffer[Offset + 6] << 0x30) | (Buffer[Offset + 7] << 0x38) | (Buffer[Offset + 8] << 0x40);
+uint32_t ReadU64(uint8_t *Buffer) {
+    return Buffer[0] | (Buffer[1] << 0x8) | (Buffer[2] << 0x10) | (Buffer[3] << 0x18) | (Buffer[4] << 0x20) | (Buffer[5] << 0x28) | (Buffer[6] << 0x30) | (Buffer[7] << 0x38);
 }
 
 can_frame ODrive::ODrive::ConstructCANMessage(uint16_t NodeID, Commands Cmd, uint8_t *Data = NULL, uint32_t DataSize = 0) {
@@ -69,7 +69,7 @@ uint64_t ODrive::ODrive::GetMotorError(uint16_t Node) {
     Write(&Request);
     
     Read(&Request);
-    return ReadU64(Request.data, 0);
+    return ReadU64(Request.data);
 }
 
 uint32_t ODrive::ODrive::GetEncoderError(uint16_t Node) {
@@ -168,7 +168,7 @@ void ODrive::ODrive::SetTrajAccelLimits(uint16_t Node, uint32_t AccelLimit, uint
     std::vector<uint32_t> Params;
     Params.push_back(AccelLimit);
     Params.push_back(DeaccelLimit);
-    can_frame Request = ConstructCANMessage(Node, Commands::SetTrajectoryAccelerationLimit, (uint8_t *)&Params[0], sizeof(AccelLimit) + sizeof(DeaccelLimit));
+    can_frame Request = ConstructCANMessage(Node, Commands::SetTrajAccelLimits, (uint8_t *)&Params[0], sizeof(AccelLimit) + sizeof(DeaccelLimit));
     Write(&Request);
 }
 
