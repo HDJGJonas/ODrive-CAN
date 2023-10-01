@@ -3,6 +3,13 @@
 
 int main (int argc, char *argv[]) { 
     ODrive::ODrive Hndl;
-    std::cout << Hndl.GetHeartbeat(1).AxisCurrentState << std::endl;
+    union {
+        float f;
+        uint32_t u;
+    }punning;
+
+    punning.u = Hndl.GetEncoderEstimate(1).Position;
+
+    std::cout << punning.f << std::endl;
     return 0;
 }
