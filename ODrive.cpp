@@ -25,6 +25,10 @@ uint32_t ReadU32(uint8_t *Buffer, uint32_t Offset) {
     return Buffer[Offset] | (Buffer[Offset + 1] << 0x8) | (Buffer[Offset + 2] << 0x10) | (Buffer[Offset + 3] << 0x18);
 }
 
+uint32_t ReadU64(uint8_t *Buffer) {
+    return Buffer[0] | (Buffer[1] << 0x8) | (Buffer[2] << 0x10) | (Buffer[3] << 0x18) | (Buffer[4] << 0x20) | (Buffer[5] << 0x28) | (Buffer[6] << 0x30) | (Buffer[7] << 0x38);
+}
+
 can_frame ODrive::ODrive::ConstructCANMessage(uint16_t NodeID, Commands Cmd, uint8_t *Data = NULL, uint32_t DataSize = 0) {
     can_frame Frame;
     memset(&Frame, 0, sizeof(can_frame));
@@ -39,30 +43,8 @@ can_frame ODrive::ODrive::ConstructCANMessage(uint16_t NodeID, Commands Cmd, uin
     return Frame;
 }
 
-VersionQuery ODrive::ODrive::GetVersion(uint16_t Node) {
-    can_frame Request = ConstructCANMessage(Node, Commands::GetVersion);
-    
-    Write(&Request);
-    Read(&Request);
-
-    std::cout << Request.can_dlc << std::endl;
-
-    VersionQuery Response = {
-        .Protocol = Request.data[0],
-        .HW_Major = Request.data[1],
-        .HW_Minor = Request.data[2],
-        .HW_Variant = Request.data[3],
-        .FW_Major = Request.data[4],
-        .FW_Minor = Request.data[5],
-        .FW_Revision = Request.data[6],
-        .FW_Unreleased = Request.data[7],
-    };
-
-    return Response;
-}
-
 HeartbeatRequest ODrive::ODrive::GetHeartbeat(uint16_t Node)   {
-    can_frame Request = ConstructCANMessage(Node, Commands::Heartbeat);
+    can_frame Request = ConstructCANMessage(Node, Commands::GetHearbeat);
     Write(&Request);
     
     Read(&Request);
@@ -82,34 +64,46 @@ void ODrive::ODrive::Endstop(uint16_t Node) {
     Write(&Request);
 }
 
-ErrorStatus ODrive::ODrive::GetError(uint16_t Node) {
-    can_frame Request = ConstructCANMessage(Node, Commands::Heartbeat);
+uint64_t ODrive::ODrive::GetMotorError(uint16_t Node) {
+    can_frame Request = ConstructCANMessage(Node, Commands::GetMotorError);
     Write(&Request);
     
     Read(&Request);
-    ErrorStatus Response = {
-        .Active = ReadU32(Request.data, 0),
-        .Reason = ReadU32(Request.data, 4),
-    };
-    return Response;
+    return ReadU64(Request.data);
 }
 
-void ODrive::ODrive::SetNodeID(uint16_t Node, uint32_t ID) {
+uint32_t ODrive::ODrive::GetEncoderError(uint16_t Node) {
+    can_frame Request = ConstructCANMessage(Node, Commands::GetEncoderError);
+    Write(&Request);
+    
+    Read(&Request);
+    return ReadU32(Request.data, 0);
+}
+
+uint32_t ODrive::ODrive::GetSensorlessError(uint16_t Node) {
+    can_frame Request = ConstructCANMessage(Node, Commands::GetSensorlessError);
+    Write(&Request);
+    
+    Read(&Request);
+    return ReadU32(Request.data, 0);
+}
+
+void ODrive::ODrive::SetAxisNodeID(uint16_t Node, uint32_t ID) {
     std::vector<uint32_t> Params;
     Params.push_back(ID);
-    can_frame Request = ConstructCANMessage(Node, Commands::Heartbeat, (uint8_t *)&Params[0]);
+    can_frame Request = ConstructCANMessage(Node, Commands::SetAxisNodeId, (uint8_t *)&Params[0]);
     Write(&Request);
 }
 
-void ODrive::ODrive::SetState(uint16_t Node, uint32_t State) {
+void ODrive::ODrive::SetAxisRequestedState(uint16_t Node, AxisState State) {
     std::vector<uint32_t> Params;
     Params.push_back(State);
-    can_frame Request = ConstructCANMessage(Node, Commands::SetAxisState, (uint8_t *)&Params[0], sizeof(State));
+    can_frame Request = ConstructCANMessage(Node, Commands::SetAxisRequestedState, (uint8_t *)&Params[0], sizeof(State));
     Write(&Request);
 }
 
-EncoderEstimates ODrive::ODrive::GetEncEstimate(uint16_t Node) {
-    can_frame Request = ConstructCANMessage(Node, Commands::GetEncoderEstimates);
+EncoderEstimates ODrive::ODrive::GetEncoderEstimate(uint16_t Node) {
+    can_frame Request = ConstructCANMessage(Node, Commands::GetEncoderEstimate);
     Write(&Request);
     
     Read(&Request);
@@ -128,19 +122,19 @@ void ODrive::ODrive::SetControllerMode(uint16_t Node, ControlMode Ctrl, InputMod
     Write(&Request);
 }
 
-void ODrive::ODrive::SetInputPosition(uint16_t Node, uint32_t Position, uint16_t VelocityFF, uint16_t TorqueFF) {
+void ODrive::ODrive::SetInputPos(uint16_t Node, uint32_t Position, uint16_t VelocityFF, uint16_t TorqueFF) {
     std::vector<uint32_t> Params;
     Params.push_back(Position);
     Params.push_back(VelocityFF | (TorqueFF << 0x10));
-    can_frame Request = ConstructCANMessage(Node, Commands::SetInputPosition, (uint8_t *)&Params[0], sizeof(Position) + sizeof(VelocityFF) + sizeof(TorqueFF));
+    can_frame Request = ConstructCANMessage(Node, Commands::SetInputPos, (uint8_t *)&Params[0], sizeof(Position) + sizeof(VelocityFF) + sizeof(TorqueFF));
     Write(&Request);
 }
 
-void ODrive::ODrive::SetInputVelocity(uint16_t Node, uint32_t Velocity, uint16_t TorqueFF) {
+void ODrive::ODrive::SetInputVel(uint16_t Node, uint32_t Velocity, uint16_t TorqueFF) {
     std::vector<uint32_t> Params;
     Params.push_back(Velocity);
     Params.push_back(TorqueFF);
-    can_frame Request = ConstructCANMessage(Node, Commands::SetInputVelocity, (uint8_t *)&Params[0], sizeof(Velocity) + sizeof(TorqueFF));
+    can_frame Request = ConstructCANMessage(Node, Commands::SetInputVel, (uint8_t *)&Params[0], sizeof(Velocity) + sizeof(TorqueFF));
     Write(&Request);
 }
 
@@ -158,30 +152,30 @@ void ODrive::ODrive::SetLimits(uint16_t Node, uint16_t VelocityLimit, uint16_t C
     Write(&Request);
 }
 
-void ODrive::ODrive::StartAnticog(uint16_t Node) {
+void ODrive::ODrive::StartAnticogging(uint16_t Node) {
     can_frame Request = ConstructCANMessage(Node, Commands::StartAnticogging);
     Write(&Request);
 }
 
-void ODrive::ODrive::LimitTrajectoryVel(uint16_t Node, uint32_t Limit) {
+void ODrive::ODrive::SetTrajVelLimit(uint16_t Node, uint32_t Limit) {
     std::vector<uint32_t> Params;
     Params.push_back(Limit);
-    can_frame Request = ConstructCANMessage(Node, Commands::SetTrajectoryVelocityLimit, (uint8_t *)&Params[0], sizeof(Limit));
+    can_frame Request = ConstructCANMessage(Node, Commands::SetTrajVelLimit, (uint8_t *)&Params[0], sizeof(Limit));
     Write(&Request);
 }
 
-void ODrive::ODrive::LimitTrajectoryAccel(uint16_t Node, uint32_t AccelLimit, uint32_t DeaccelLimit) {
+void ODrive::ODrive::SetTrajAccelLimits(uint16_t Node, uint32_t AccelLimit, uint32_t DeaccelLimit) {
     std::vector<uint32_t> Params;
     Params.push_back(AccelLimit);
     Params.push_back(DeaccelLimit);
-    can_frame Request = ConstructCANMessage(Node, Commands::SetTrajectoryAccelerationLimit, (uint8_t *)&Params[0], sizeof(AccelLimit) + sizeof(DeaccelLimit));
+    can_frame Request = ConstructCANMessage(Node, Commands::SetTrajAccelLimits, (uint8_t *)&Params[0], sizeof(AccelLimit) + sizeof(DeaccelLimit));
     Write(&Request);
 }
 
 void ODrive::ODrive::SetTrajInertia(uint16_t Node, uint32_t Inertia) {
     std::vector<uint32_t> Params;
     Params.push_back(Inertia);
-    can_frame Request = ConstructCANMessage(Node, Commands::SetTrajectoryInertia, (uint8_t *)&Params[0], sizeof(Inertia));
+    can_frame Request = ConstructCANMessage(Node, Commands::SetTrajInertia, (uint8_t *)&Params[0], sizeof(Inertia));
     Write(&Request);
 }
 
@@ -191,20 +185,20 @@ IQRequest ODrive::ODrive::GetIQ(uint16_t Node) {
     
     Read(&Request);
     IQRequest Response = {
-        .SetPoint = ReadU32(Request.data, 0),
+        .Setpoint = ReadU32(Request.data, 0),
         .Measured = ReadU32(Request.data, 4),
     };
     return Response;
 }
 
-TemperatureRequest ODrive::ODrive::GetTemp(uint16_t Node) {
-    can_frame Request = ConstructCANMessage(Node, Commands::GetTemperature);
+SensorlessEstimates ODrive::ODrive::GetSensorlessEstimates(uint16_t Node) {
+    can_frame Request = ConstructCANMessage(Node, Commands::GetSensorlessError);
     Write(&Request);
     
     Read(&Request);
-    TemperatureRequest Response = {
-        .SetPoint = ReadU32(Request.data, 0),
-        .Measured = ReadU32(Request.data, 4),
+    SensorlessEstimates Response = {
+        .PosEstimate = ReadU32(Request.data, 0),
+        .VelEstimate = ReadU32(Request.data, 4),
     };
     return Response;
 }
@@ -214,8 +208,8 @@ void ODrive::ODrive::Reboot(uint16_t Node) {
     Write(&Request);
 }
 
-PowerRequest ODrive::ODrive::GetPower(uint16_t Node) {
-    can_frame Request = ConstructCANMessage(Node, Commands::GetBusVoltageCurrent);
+PowerRequest ODrive::ODrive::GetBusVoltageAndCurrent(uint16_t Node) {
+    can_frame Request = ConstructCANMessage(Node, Commands::GetBusVoltageAndCurrent);
     Write(&Request);
     
     Read(&Request);
@@ -231,10 +225,10 @@ void ODrive::ODrive::ClearErrors(uint16_t Node) {
     Write(&Request);
 }
 
-void ODrive::ODrive::SetAbsPosition(uint16_t Node, uint32_t Position) {
+void ODrive::ODrive::SetLinearCount(uint16_t Node, uint32_t Position) {
     std::vector<uint32_t> Params;
     Params.push_back(Position);
-    can_frame Request = ConstructCANMessage(Node, Commands::SetAbsolutePosition, (uint8_t *)&Params[0], sizeof(Position));
+    can_frame Request = ConstructCANMessage(Node, Commands::SetLinearCount, (uint8_t *)&Params[0], sizeof(Position));
     Write(&Request);
 }
 
@@ -245,11 +239,11 @@ void ODrive::ODrive::SetPositionGain(uint16_t Node, uint32_t Gain) {
     Write(&Request);
 }
 
-void ODrive::ODrive::SetVelocityGains(uint16_t Node, uint32_t VelGain, uint32_t VelIntegratorGain) {
+void ODrive::ODrive::SetVelGains(uint16_t Node, uint32_t VelGain, uint32_t VelIntegratorGain) {
     std::vector<uint32_t> Params;
     Params.push_back(VelGain);
     Params.push_back(VelIntegratorGain);
-    can_frame Request = ConstructCANMessage(Node, Commands::SetVelocityGains, (uint8_t *)&Params[0], sizeof(VelGain) + sizeof(VelIntegratorGain));
+    can_frame Request = ConstructCANMessage(Node, Commands::SetVelGains, (uint8_t *)&Params[0], sizeof(VelGain) + sizeof(VelIntegratorGain));
     Write(&Request);
 }
 
@@ -265,9 +259,4 @@ uint32_t ODrive::ODrive::GetControllerError(uint16_t Node) {
     Write(&Request);
     Read(&Request);
     return ReadU32(Request.data, 0);
-}
-
-void ODrive::ODrive::DFUMode(uint16_t Node) {
-    can_frame Request = ConstructCANMessage(Node, Commands::DFU);
-    Write(&Request);
 }

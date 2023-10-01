@@ -3,7 +3,13 @@
 
 int main (int argc, char *argv[]) { 
     ODrive::ODrive Hndl;
-    HeartbeatRequest Heartbeat = Hndl.GetHeartbeat(1);
-    std::cout << Heartbeat.AxisError << std::endl;
+
+    union {
+        float f;
+        uint32_t u;
+    } punning;
+    punning.f = 0.0f;
+    
+    Hndl.SetInputPos(1,punning.u, 0 ,0);
     return 0;
 }
