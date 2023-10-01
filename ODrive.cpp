@@ -45,15 +45,14 @@ can_frame ODrive::ODrive::ConstructCANMessage(uint16_t NodeID, Commands Cmd, uin
 
 HeartbeatRequest ODrive::ODrive::GetHeartbeat(uint16_t Node)   {
     can_frame Request = ConstructCANMessage(Node, Commands::GetHearbeat);
-    Write(&Request);
     
     Read(&Request);
     HeartbeatRequest Response = {
         .AxisError = ReadU32(Request.data, 0),
         .AxisCurrentState = Request.data[4],
-        .MotorErrorFlag = Request.data[5],
-        .EncoderErrorFlag = Request.data[6],
-        .ControllerErrorFlag = Request.data[7] & 0xFE,
+        .MotorErrorFlag = Request.data[5] & 0x80,
+        .EncoderErrorFlag = Request.data[6] & 0x80,
+        .ControllerErrorFlag = Request.data[7] & 0x80,
         .TrajectoryDoneFlag = Request.data[7] & 0x1,
     };
     return Response;
