@@ -42,7 +42,7 @@ ssize_t ODrive::CAN::Write(can_frame *Frame) {
 ssize_t ODrive::CAN::Read(can_frame *Frame) {
     ssize_t bytesRead;
     uint32_t desiredCanId = Frame -> can_id;
-    int remainingTimeout = 10000 * 1000; // Convert milliseconds to microseconds
+    int remainingTimeout = 10000000; //microseconds
     
     while (remainingTimeout > 0) {
         bytesRead = read(this->SocketFD, Frame, sizeof(can_frame));

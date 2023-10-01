@@ -20,11 +20,11 @@ namespace ODrive {
             // Function declarations
             HeartbeatRequest GetHeartbeat(uint16_t Node);
             void Endstop(uint16_t Node);
-            MotorError GetMotorError(uint16_t Node);
-            EncoderError GetEncoderError(uint16_t Node);
-            SensorlessError GetSensorlessError(uint16_t Node);
+            uint64_t GetMotorError(uint16_t Node);
+            uint32_t GetEncoderError(uint16_t Node);
+            uint32_t GetSensorlessError(uint16_t Node);
             void SetAxisNodeID(uint16_t Node, uint32_t ID);
-            void SetAxisRequestedState(uint16_t Node, uint32_t State);
+            void SetAxisRequestedState(uint16_t Node, AxisState State);
             EncoderEstimates GetEncoderEstimate(uint16_t Node);
             EncoderCount GetEncoderCount(uint16_t Node);
             void SetControllerMode(uint16_t Node, ControlMode Ctrl, InputMode Input);
