@@ -34,7 +34,7 @@ int main (int argc, char *argv[]) {
 
     // Use the generated waveforms for motor control
 
-    while (ture) {
+    while (true) {
         for (int i = 0; i < numSamples; i++) {
             punning.f = waveform1[i];
             Hndl.SetPosition(1, punning.u, 0, 0);
